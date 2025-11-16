@@ -1,0 +1,19 @@
+Work Projects:
+	- Complete the quarterly report @priority(high) @due(2024-03-15)
+	- Review team performance @priority(medium)
+	- Schedule one-on-one meetings
+	Team meeting notes:
+		Discussed new project timeline
+		Action items assigned
+
+Personal Projects:
+	- Learn Swift concurrency @tag(learning)
+	- Build TaskPaper CLI tool @done @completed(2024-03-01)
+	- Write documentation @priority(high)
+		Need to include installation instructions
+		Add usage examples
+
+Shopping List:
+	- Groceries
+	- Office supplies @store(Staples)
+	- Books @priority(low)

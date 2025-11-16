@@ -60,3 +60,9 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Swift installation files (for development only, not part of the project)
+swift-*.tar.gz
+swift-*/
+swiftly*
+LICENSE.txt

@@ -1,0 +1,24 @@
+{
+  "originHash" : "2f67d4a7a2049e246f77aad9e6082a7aee65abcf337eaca949c425c93fafd0f1",
+  "pins" : [
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "cdd0ef3755280949551dc26dee5de9ddeda89f54",
+        "version" : "1.6.2"
+      }
+    },
+    {
+      "identity" : "taskpaper",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/deverman/TaskPaper.git",
+      "state" : {
+        "branch" : "claude/modernize-taskpaper-swift6-015gYZ1n8MMchqup6kJYH8mN",
+        "revision" : "1125630dd565359d29bfd8b869762b3d91ef854b"
+      }
+    }
+  ],
+  "version" : 3
+}
