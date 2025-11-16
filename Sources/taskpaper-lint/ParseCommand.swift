@@ -25,42 +25,16 @@ struct Parse: ParsableCommand {
         do {
             content = try inputSource.readContent()
         } catch {
-            print("Error: \(error.localizedDescription)", to: &stderr)
+            printErr("Error: \(error.localizedDescription)")
             throw ExitCode.failure
         }
 
-        // Parse the document
-        let parser = TaskPaperParser()
-        let document: TaskPaperDocument
-
-        do {
-            document = try parser.parse(content)
-        } catch let error as TaskPaperParseError {
-            print("❌ Parse failed for \(inputSource.displayName)", to: &stderr)
-            print("", to: &stderr)
-            print("Parse error: \(error.localizedDescription)", to: &stderr)
-
-            if let line = error.line {
-                print("  at line \(line)", to: &stderr)
-            }
-
-            if let context = error.context {
-                print("", to: &stderr)
-                print("Context:", to: &stderr)
-                print("  \(context)", to: &stderr)
-            }
-
-            throw ExitCode.failure
-        } catch {
-            print("❌ Parse failed for \(inputSource.displayName)", to: &stderr)
-            print("", to: &stderr)
-            print("Unexpected error: \(error.localizedDescription)", to: &stderr)
-            throw ExitCode.failure
-        }
+        // Parse the document (TaskPaper parser doesn't throw errors)
+        let document = TaskPaper(content)
 
         // Format and output the result
         let formatter = FormatterFactory.create(for: format)
-        let output = formatter.format(document)
+        let output = formatter.format(document, source: content as NSString)
         print(output)
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import ArgumentParser
 import TaskPaper
 
 /// Output format options
@@ -21,13 +22,13 @@ enum OutputFormat: String, ExpressibleByArgument {
 
 /// Protocol for formatting TaskPaper documents
 protocol Formatter {
-    func format(_ document: TaskPaperDocument) -> String
+    func format(_ document: TaskPaper, source: NSString) -> String
 }
 
 /// JSON formatter
 struct JSONFormatter: Formatter {
-    func format(_ document: TaskPaperDocument) -> String {
-        let items = formatItems(document.items)
+    func format(_ document: TaskPaper, source: NSString) -> String {
+        let items = formatItems(document.items, source: source)
 
         do {
             let jsonData = try JSONSerialization.data(
@@ -40,56 +41,70 @@ struct JSONFormatter: Formatter {
         }
     }
 
-    private func formatItems(_ items: [TaskPaperItem]) -> [[String: Any]] {
+    private func formatItems(_ items: [Item], source: NSString) -> [[String: Any]] {
         items.map { item in
+            let content = source.substring(with: item.contentRange)
             var dict: [String: Any] = [
-                "type": item.type.rawValue,
-                "content": item.content
+                "type": typeString(item.type),
+                "content": content
             ]
 
-            if !item.attributes.isEmpty {
-                dict["attributes"] = item.attributes.mapValues { $0 ?? NSNull() }
+            if !item.tags.isEmpty {
+                var tags: [String: Any] = [:]
+                for tag in item.tags {
+                    tags[tag.name] = tag.value ?? NSNull()
+                }
+                dict["tags"] = tags
             }
 
             if !item.children.isEmpty {
-                dict["children"] = formatItems(item.children)
+                dict["children"] = formatItems(item.children, source: source)
             }
 
             return dict
+        }
+    }
+
+    private func typeString(_ type: Item.ItemType) -> String {
+        switch type {
+        case .note: return "note"
+        case .project: return "project"
+        case .task: return "task"
         }
     }
 }
 
 /// Pretty formatter (human-readable)
 struct PrettyFormatter: Formatter {
-    func format(_ document: TaskPaperDocument) -> String {
+    func format(_ document: TaskPaper, source: NSString) -> String {
         var output = ""
-        formatItems(document.items, indent: 0, output: &output)
+        formatItems(document.items, source: source, indent: 0, output: &output)
         return output
     }
 
-    private func formatItems(_ items: [TaskPaperItem], indent: Int, output: inout String) {
+    private func formatItems(_ items: [Item], source: NSString, indent: Int, output: inout String) {
         for item in items {
             let indentStr = String(repeating: "  ", count: indent)
+            let content = source.substring(with: item.contentRange)
 
             switch item.type {
             case .project:
-                output += "\(indentStr)📁 PROJECT: \(item.content)\n"
+                output += "\(indentStr)📁 PROJECT: \(content)\n"
             case .task:
-                output += "\(indentStr)☐ TASK: \(item.content)\n"
+                output += "\(indentStr)☐ TASK: \(content)\n"
             case .note:
-                output += "\(indentStr)📝 NOTE: \(item.content)\n"
+                output += "\(indentStr)📝 NOTE: \(content)\n"
             }
 
-            if !item.attributes.isEmpty {
-                for (key, value) in item.attributes.sorted(by: { $0.key < $1.key }) {
-                    let valueStr = value ?? "(no value)"
-                    output += "\(indentStr)  @\(key): \(valueStr)\n"
+            if !item.tags.isEmpty {
+                for tag in item.tags.sorted(by: { $0.name < $1.name }) {
+                    let valueStr = tag.value ?? "(no value)"
+                    output += "\(indentStr)  @\(tag.name): \(valueStr)\n"
                 }
             }
 
             if !item.children.isEmpty {
-                formatItems(item.children, indent: indent + 1, output: &output)
+                formatItems(item.children, source: source, indent: indent + 1, output: &output)
             }
         }
     }
@@ -97,17 +112,18 @@ struct PrettyFormatter: Formatter {
 
 /// Tree formatter (tree-style visualization)
 struct TreeFormatter: Formatter {
-    func format(_ document: TaskPaperDocument) -> String {
+    func format(_ document: TaskPaper, source: NSString) -> String {
         var output = ".\n"
-        formatItems(document.items, prefix: "", isLast: true, output: &output)
+        formatItems(document.items, source: source, prefix: "", isLast: true, output: &output)
         return output
     }
 
-    private func formatItems(_ items: [TaskPaperItem], prefix: String, isLast: Bool, output: inout String) {
+    private func formatItems(_ items: [Item], source: NSString, prefix: String, isLast: Bool, output: inout String) {
         for (index, item) in items.enumerated() {
             let isLastItem = index == items.count - 1
             let connector = isLastItem ? "└── " : "├── "
             let icon: String
+            let content = source.substring(with: item.contentRange)
 
             switch item.type {
             case .project:
@@ -118,24 +134,24 @@ struct TreeFormatter: Formatter {
                 icon = "📝"
             }
 
-            output += "\(prefix)\(connector)\(icon) \(item.content)"
+            output += "\(prefix)\(connector)\(icon) \(content)"
 
-            if !item.attributes.isEmpty {
-                let attrs = item.attributes.map { key, value in
-                    if let value = value {
-                        return "@\(key)(\(value))"
+            if !item.tags.isEmpty {
+                let tags = item.tags.sorted(by: { $0.name < $1.name }).map { tag in
+                    if let value = tag.value {
+                        return "@\(tag.name)(\(value))"
                     } else {
-                        return "@\(key)"
+                        return "@\(tag.name)"
                     }
                 }.joined(separator: " ")
-                output += " [\(attrs)]"
+                output += " [\(tags)]"
             }
 
             output += "\n"
 
             if !item.children.isEmpty {
                 let newPrefix = prefix + (isLastItem ? "    " : "│   ")
-                formatItems(item.children, prefix: newPrefix, isLast: isLastItem, output: &output)
+                formatItems(item.children, source: source, prefix: newPrefix, isLast: isLastItem, output: &output)
             }
         }
     }

@@ -1,6 +1,5 @@
 import ArgumentParser
 
-@main
 struct TaskPaperLint: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "taskpaper-lint",
@@ -10,3 +9,6 @@ struct TaskPaperLint: ParsableCommand {
         defaultSubcommand: Validate.self
     )
 }
+
+// Entry point
+TaskPaperLint.main()
